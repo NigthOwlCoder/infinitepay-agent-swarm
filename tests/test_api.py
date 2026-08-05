@@ -18,6 +18,11 @@ def test_english_fee_question_is_understood():
     body = ask("What are the fees for debit and credit card transactions?").json()
     assert "Pix grátis" in body["answer"]
 
+def test_machine_has_no_rent_or_monthly_fee():
+    body = ask("Preciso pagar aluguel pela maquininha?").json()
+    assert body["answer"].startswith("Não.")
+    assert "mensalidade" in body["answer"]
+
 def test_current_question_uses_search():
     assert ask("Quando foi o último jogo do Palmeiras?").json()["agent"] == "web_search"
 

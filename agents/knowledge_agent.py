@@ -6,6 +6,17 @@ class KnowledgeAgent:
 
     def handle(self, request):
         question = request.message.casefold()
+        if any(term in question for term in ("aluguel", "mensalidade", "monthly fee", "rental")):
+            return {
+                "agent": "knowledge",
+                "answer": (
+                    "Não. A Maquininha Smart não tem aluguel, mensalidade nem fidelidade. "
+                    "Você paga pela aquisição do equipamento e pelas taxas aplicadas às "
+                    "vendas com cartão; o Pix é grátis. Consulte a oferta vigente antes da compra."
+                ),
+                "sources": ["https://www.infinitepay.io/conta"],
+                "needs_human": False,
+            }
         if any(word in question for word in ("taxa", "tarifa", "fee", "rate")):
             return {
                 "agent": "knowledge",
