@@ -14,12 +14,29 @@ class WebSearchAgent:
     DATE_PATTERN = re.compile(
         r"(que|qual)\s+(dia|data).*hoje|dia de hoje|today'?s? date|what day is it"
     )
+    YEAR_PATTERN = re.compile(
+        r"\b(?:em\s+)?(?:que|qual)\s+ano\s+(?:estamos|é|e)|"
+        r"\b(?:what|which)\s+year\s+is\s+it\b",
+        re.IGNORECASE,
+    )
 
     def __init__(self, search_tool: WebSearchTool | None = None) -> None:
         self.search_tool = search_tool or WebSearchTool()
 
     def handle(self, request: ChatRequest) -> dict:
         question = request.message.casefold()
+        if self.YEAR_PATTERN.search(question):
+            try:
+                sao_paulo = ZoneInfo("America/Sao_Paulo")
+            except ZoneInfoNotFoundError:
+                sao_paulo = timezone(timedelta(hours=-3), name="America/Sao_Paulo")
+            year = datetime.now(sao_paulo).year
+            return {
+                "agent": "web_search",
+                "answer": f"Estamos em {year}.",
+                "sources": ["Relógio do servidor · fuso America/Sao_Paulo"],
+                "needs_human": False,
+            }
         if self.DATE_PATTERN.search(question):
             try:
                 sao_paulo = ZoneInfo("America/Sao_Paulo")

@@ -75,6 +75,24 @@ def test_today_question_returns_server_date():
     assert body["answer"].startswith("Hoje é")
     assert "America/Sao_Paulo" in body["sources"][0]
 
+
+def test_year_question_returns_current_server_year():
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    body = ask("Em que ano estamos?").json()
+    expected_year = datetime.now(ZoneInfo("America/Sao_Paulo")).year
+    assert body["agent"] == "web_search"
+    assert body["answer"] == f"Estamos em {expected_year}."
+
+
+def test_infinitepay_trust_question_returns_grounded_answer():
+    body = ask("A InfinitePay é confiável?").json()
+    assert body["agent"] == "knowledge"
+    assert body["answer"].startswith("Sim,")
+    assert "Banco Central" in body["answer"]
+    assert len(body["sources"]) == 2
+
 def test_account_question_uses_support():
     body = ask("Why am I not able to make transfers?").json()
     assert body["agent"] == "customer_support" and "customer_account" in body["sources"]
@@ -124,7 +142,7 @@ def test_public_pages_are_available():
 
 def test_health_exposes_version():
     body = client.get("/health").json()
-    assert body == {"status": "ok", "version": "1.2.1"}
+    assert body == {"status": "ok", "version": "1.2.2"}
 
 
 def test_agent_prompts_define_capabilities_and_output_contracts():

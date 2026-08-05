@@ -9,6 +9,23 @@ class KnowledgeAgent:
 
     def handle(self, request: ChatRequest) -> dict:
         question = request.message.casefold()
+        if any(term in question for term in ("confiável", "confiavel", "é segura", "e segura")):
+            return {
+                "agent": "knowledge",
+                "answer": (
+                    "Sim, há evidências objetivas de que a InfinitePay é uma empresa legítima "
+                    "e confiável: ela é operada pela CloudWalk Instituição de Pagamento e "
+                    "Serviços Ltda., identificada nos registros do Banco Central, e mantém "
+                    "políticas públicas de segurança cibernética e prevenção a fraudes. "
+                    "Isso não significa risco zero: use apenas o aplicativo e o site oficiais "
+                    "e nunca compartilhe senhas ou códigos de verificação."
+                ),
+                "sources": [
+                    "https://www.bcb.gov.br/fis/tarifas/htms/18189547.asp?frame=1&seg=bancossegmento15",
+                    "https://www.infinitepay.io/legal/politica-de-seguranca-cibernetica",
+                ],
+                "needs_human": False,
+            }
         if any(term in question for term in ("aluguel", "mensalidade", "monthly fee", "rental")):
             return {
                 "agent": "knowledge",
@@ -53,7 +70,10 @@ class KnowledgeAgent:
     def can_answer(self, question: str) -> bool:
         """Return whether the approved product corpus can ground this question."""
         normalized = question.casefold()
-        explicit_intents = ("aluguel", "mensalidade", "taxa", "tarifa", "fee", "rate")
+        explicit_intents = (
+            "aluguel", "mensalidade", "taxa", "tarifa", "fee", "rate",
+            "confiável", "confiavel", "é segura", "e segura",
+        )
         if any(term in normalized for term in explicit_intents):
             return True
         hits = self.rag.search(question, limit=1)
