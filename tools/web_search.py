@@ -1,6 +1,8 @@
+import base64
+import re
 from dataclasses import dataclass
 from html.parser import HTMLParser
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, quote_plus, unquote, urlparse
 
 import httpx
 
@@ -69,7 +71,11 @@ class WebSearchTool:
         for topic in payload.get("RelatedTopics", []):
             if isinstance(topic, dict) and topic.get("Text") and topic.get("FirstURL"):
                 return WebResult(answer=topic["Text"], source=topic["FirstURL"])
-        return self._search_html(query) or self._search_wikipedia(query)
+        return (
+            self._search_html(query)
+            or self._search_wikipedia(query)
+            or self._search_via_reader(query)
+        )
 
     def _search_html(self, query: str) -> WebResult | None:
         try:
@@ -126,6 +132,66 @@ class WebSearchTool:
             return None
         summary = extract[:700].rsplit(" ", 1)[0]
         return WebResult(answer=summary, source=source)
+
+    def _search_via_reader(self, query: str) -> WebResult | None:
+        search_url = (
+            "https://r.jina.ai/http://www.bing.com/search?q=" + quote_plus(query)
+        )
+        try:
+            response = httpx.get(search_url, timeout=15.0)
+            response.raise_for_status()
+        except httpx.HTTPError:
+            return None
+
+        match = re.search(
+            r"## \[([^]]+)]\((https://www\.bing\.com/ck/a[^)]+)\)\s+"
+            r"(.+?)(?=\n\d+\.)",
+            response.text,
+            flags=re.DOTALL,
+        )
+        if not match:
+            return None
+
+        title, redirect_url, snippet = match.groups()
+        source = self._decode_bing_url(redirect_url)
+        if not source:
+            return None
+
+        page_text = self._read_page(source)
+        answer = page_text or re.sub(r"\s+", " ", snippet).strip()
+        if not answer:
+            return None
+        return WebResult(answer=f"{title}: {answer}", source=source)
+
+    @staticmethod
+    def _decode_bing_url(url: str) -> str:
+        encoded = parse_qs(urlparse(url).query).get("u", [""])[0]
+        if not encoded.startswith("a1"):
+            return ""
+        payload = encoded[2:]
+        try:
+            padding = "=" * (-len(payload) % 4)
+            return base64.urlsafe_b64decode(payload + padding).decode("utf-8")
+        except (ValueError, UnicodeDecodeError):
+            return ""
+
+    @staticmethod
+    def _read_page(source: str) -> str:
+        parsed = urlparse(source)
+        if parsed.scheme not in {"http", "https"}:
+            return ""
+        reader_url = "https://r.jina.ai/http://" + parsed.netloc + parsed.path
+        try:
+            response = httpx.get(reader_url, timeout=15.0)
+            response.raise_for_status()
+        except httpx.HTTPError:
+            return ""
+        content = response.text.split("Markdown Content:", 1)[-1].strip()
+        clean = re.sub(r"!\[[^]]*]\([^)]+\)", "", content)
+        clean = re.sub(r"\[([^]]+)]\([^)]+\)", r"\1", clean)
+        clean = re.sub(r"[#*`_|]+", "", clean)
+        clean = re.sub(r"\s+", " ", clean).strip()
+        return clean[:700].rsplit(" ", 1)[0]
 
     @staticmethod
     def _direct_url(url: str) -> str:

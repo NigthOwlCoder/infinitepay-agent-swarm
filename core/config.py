@@ -5,7 +5,7 @@ from pathlib import Path
 @dataclass(frozen=True)
 class Settings:
     app_name: str = "InfinitePay Agent Swarm"
-    app_version: str = "1.2.0"
+    app_version: str = "1.2.1"
     project_root: Path = Path(__file__).resolve().parent.parent
 
     @property

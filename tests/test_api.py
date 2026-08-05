@@ -116,7 +116,7 @@ def test_public_pages_are_available():
 
 def test_health_exposes_version():
     body = client.get("/health").json()
-    assert body == {"status": "ok", "version": "1.2.0"}
+    assert body == {"status": "ok", "version": "1.2.1"}
 
 
 def test_agent_prompts_define_capabilities_and_output_contracts():
