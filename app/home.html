@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>InfinitePay Agent Swarm</title>
+  <style>
+    :root{color-scheme:dark;--bg:#08111f;--panel:#101c2e;--line:#263750;--accent:#50e3c2;--muted:#9caec7}*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Inter,Segoe UI,sans-serif;background:radial-gradient(circle at top,#17304d,var(--bg) 50%);color:#f5f8ff;display:grid;place-items:center;padding:24px}main{width:min(920px,100%);height:min(760px,calc(100vh - 48px));background:rgba(16,28,46,.96);border:1px solid var(--line);border-radius:24px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px #0008}header{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px}.logo{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--accent);color:#05251f;font-weight:900}h1{font-size:18px;margin:0}header p{margin:4px 0 0;font-size:13px;color:var(--muted)}#messages{flex:1;overflow:auto;padding:26px;display:flex;flex-direction:column;gap:16px}.message{max-width:78%;padding:14px 16px;border-radius:18px;line-height:1.5;white-space:pre-wrap}.user{align-self:flex-end;background:#276e63}.bot{align-self:flex-start;background:#182941;border:1px solid var(--line)}.meta{display:block;color:var(--accent);font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px}.sources{margin-top:8px;color:var(--muted);font-size:12px}form{display:flex;gap:12px;padding:18px;border-top:1px solid var(--line);background:#0c1728}input{flex:1;min-width:0;border:1px solid var(--line);background:#14233a;color:white;border-radius:14px;padding:15px;font-size:15px}button{border:0;border-radius:14px;padding:0 24px;background:var(--accent);color:#05251f;font-weight:800;cursor:pointer}button:disabled{opacity:.55}footer{padding:0 20px 14px;background:#0c1728;color:var(--muted);font-size:11px;text-align:center}a{color:var(--accent)}
+  </style>
+</head>
+<body><main>
+  <header><div class="logo">AI</div><div><h1>InfinitePay Agent Swarm</h1><p>Produtos, informações atuais e suporte ao cliente</p></div></header>
+  <section id="messages" aria-live="polite"><div class="message bot"><span class="meta">Assistente</span>Olá! Posso te ajudar? Pergunte sobre produtos, taxas, Pix ou sua conta.</div></section>
+  <form id="form"><input id="input" maxlength="4000" autocomplete="off" placeholder="Digite sua pergunta..." aria-label="Mensagem" required><button id="send">Enviar</button></form>
+  <footer><a href="/apresentacao">Apresentação</a> · <a href="/avaliacao">Avaliação técnica</a> · <a href="/docs">API</a></footer>
+</main><script>
+const form=document.querySelector('#form'),input=document.querySelector('#input'),messages=document.querySelector('#messages'),send=document.querySelector('#send');
+function add(text,type,agent='',sources=[]){const el=document.createElement('div');el.className='message '+type;const meta=document.createElement('span');meta.className='meta';meta.textContent=agent||type;el.append(meta,document.createTextNode(text));if(sources.length){const source=document.createElement('div');source.className='sources';source.textContent='Fontes: '+sources.join(' · ');el.append(source)}messages.append(el);messages.scrollTop=messages.scrollHeight}
+form.addEventListener('submit',async(event)=>{event.preventDefault();const message=input.value.trim();if(!message)return;add(message,'user','Você');input.value='';send.disabled=true;try{const response=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,user_id:'web-user'})});const data=await response.json();if(!response.ok)throw new Error('Não foi possível processar a solicitação.');add(data.answer,'bot',data.agent.replaceAll('_',' '),data.sources||[])}catch(error){add(error.message,'bot','Erro')}finally{send.disabled=false;input.focus()}});
+</script></body></html>

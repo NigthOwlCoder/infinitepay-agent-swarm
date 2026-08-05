@@ -4,11 +4,13 @@ API multiagente para perguntas sobre produtos InfinitePay, criada para o coding 
 
 ## Arquitetura
 
-O `RouterAgent` coordena três agentes por chamadas diretas:
+O `RouterAgent` coordena cinco agentes por chamadas diretas:
 
 1. `KnowledgeAgent`: responde produtos com o índice RAG local.
 2. `WebSearchAgent`: trata perguntas gerais/atuais sem inventar fatos e fornece uma busca.
 3. `CustomerSupportAgent`: usa `get_account_status` e `get_recent_activity` e pode sinalizar atendimento humano.
+4. `ConversationAgent`: trata saudações e feedback sem consultar o RAG.
+5. `UtilityAgent`: resolve aritmética com uma árvore sintática segura, sem executar código arbitrário.
 
 Fluxo: `POST /chat -> RouterAgent -> agente especialista -> JSON`. A decisão e a justificativa são incluídas para observabilidade. As políticas são explícitas e testáveis: conhecimento só usa contexto recuperado, busca não fabrica fatos atuais e suporte não expõe segredos.
 
@@ -28,7 +30,7 @@ python -m venv .venv
 .venv/Scripts/uvicorn app.main:app --reload
 ```
 
-Interface de chat: `http://localhost:8000/`. Apresentação executiva: `http://localhost:8000/apresentacao`. Swagger: `http://localhost:8000/docs`.
+Interface de chat: `http://localhost:8000/`. Apresentação executiva: `http://localhost:8000/apresentacao`. Painel de avaliação técnica: `http://localhost:8000/avaliacao`. Swagger: `http://localhost:8000/docs`.
 
 ```bash
 curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d '{"message":"What are the fees of the Maquininha Smart?","user_id":"client789"}'
@@ -47,11 +49,22 @@ docker run --rm -p 8000:8000 agent-swarm
 pytest -q
 ```
 
+Para instalar as ferramentas de desenvolvimento e verificar estilo, imports e erros comuns:
+
+```bash
+pip install -r requirements-dev.txt
+ruff check .
+pytest
+```
+
 A suíte cobre roteamento de produto, pergunta atual, suporte com ferramentas e validação. Em produção, acrescentaria contratos de provedores, avaliação offline do RAG, prompt injection, carga, timeouts e integração.
 
 ## Decisões e evolução
 
 - Chamadas diretas deixam a comunicação clara, rápida e testável; as fronteiras podem migrar para filas/eventos sem mudar o contrato HTTP.
+- Todos os agentes implementam o mesmo contrato estrutural (`Agent`) e podem ser injetados no Router em testes ou integrações.
+- Caminhos e metadados da aplicação ficam centralizados em `core/config.py`, evitando dependência do diretório de execução.
+- A interface, a apresentação e a página de avaliação são arquivos independentes da API.
 - Nenhuma chave de LLM é obrigatória: a execução é reprodutível e dados de clientes não saem do serviço.
 - Guardrails: limites de entrada, respostas fundamentadas, nenhuma credencial em texto e `needs_human`. Em produção, a flag deve abrir um ticket autenticado.
 - As ferramentas de suporte são mocks intencionais; devem virar APIs autorizadas, auditadas e com minimização de dados.

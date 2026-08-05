@@ -5,16 +5,24 @@ from dataclasses import dataclass
 from pathlib import Path
 
 TOKEN = re.compile(r"[a-záàâãéêíóôõúç0-9]+", re.I)
-SYNONYMS = {
-    "fees": ("taxas", "tarifas"), "fee": ("taxa", "tarifa"),
-    "rates": ("taxas", "tarifas"), "rate": ("taxa", "tarifa"),
-    "cost": ("preço", "custo"), "price": ("preço", "custo"),
-    "debit": ("débito",), "credit": ("crédito",), "card": ("cartão",),
-    "phone": ("celular", "infinitetap"), "machine": ("maquininha",),
-    "account": ("conta",), "transfers": ("transferências",),
+SYNONYMS: dict[str, tuple[str, ...]] = {
+    "fees": ("taxas", "tarifas"),
+    "fee": ("taxa", "tarifa"),
+    "rates": ("taxas", "tarifas"),
+    "rate": ("taxa", "tarifa"),
+    "cost": ("preço", "custo"),
+    "price": ("preço", "custo"),
+    "debit": ("débito",),
+    "credit": ("crédito",),
+    "card": ("cartão",),
+    "phone": ("celular", "infinitetap"),
+    "machine": ("maquininha",),
+    "account": ("conta",),
+    "transfers": ("transferências",),
 }
 
-def tokenize(text):
+
+def tokenize(text: str) -> list[str]:
     tokens = TOKEN.findall(text.casefold())
     return tokens + [word for token in tokens for word in SYNONYMS.get(token, ())]
 
@@ -26,30 +34,37 @@ class SearchHit:
 
 class RagService:
     """Small dependency-free BM25 index suitable for the challenge corpus."""
-    def __init__(self, documents):
+    def __init__(self, documents: list[tuple[str, str]]) -> None:
         self.documents = documents
         self.tokens = [tokenize(text) for text, _ in documents]
         self.avg_len = sum(map(len, self.tokens)) / max(len(self.tokens), 1)
         self.df = Counter(term for doc in self.tokens for term in set(doc))
 
     @classmethod
-    def from_directory(cls, directory):
-        documents = []
+    def from_directory(cls, directory: str | Path) -> "RagService":
+        documents: list[tuple[str, str]] = []
         for path in sorted(Path(directory).glob("*.txt")):
             text = path.read_text(encoding="utf-8")
             for block in filter(str.strip, re.split(r"\n\s*\n", text)):
                 documents.append((block.strip(), str(path)))
         return cls(documents)
 
-    def search(self, query, limit=3):
-        scores = []
+    def search(self, query: str, limit: int = 3) -> list[SearchHit]:
+        scores: list[SearchHit] = []
         n = len(self.documents)
-        for (text, source), tokens in zip(self.documents, self.tokens):
-            counts, score = Counter(tokens), 0.0
+        for (text, source), tokens in zip(self.documents, self.tokens, strict=False):
+            counts = Counter(tokens)
+            score = 0.0
             for term in set(tokenize(query)):
-                if not counts[term]: continue
-                idf = math.log(1 + (n - self.df[term] + .5) / (self.df[term] + .5))
+                if not counts[term]:
+                    continue
+                idf = math.log(
+                    1 + (n - self.df[term] + 0.5) / (self.df[term] + 0.5)
+                )
                 tf = counts[term]
-                score += idf * tf * 2.5 / (tf + 1.5 * (.25 + .75 * len(tokens) / max(self.avg_len, 1)))
+                length_normalization = 0.25 + (
+                    0.75 * len(tokens) / max(self.avg_len, 1)
+                )
+                score += idf * tf * 2.5 / (tf + 1.5 * length_normalization)
             scores.append(SearchHit(text, source, round(score, 4)))
         return sorted(scores, key=lambda hit: hit.score, reverse=True)[:limit]

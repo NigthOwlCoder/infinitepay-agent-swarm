@@ -1,10 +1,13 @@
+from core.config import settings
+from model.chat_request import ChatRequest
 from services.rag import RagService
 
-class KnowledgeAgent:
-    def __init__(self, rag=None):
-        self.rag = rag or RagService.from_directory("data")
 
-    def handle(self, request):
+class KnowledgeAgent:
+    def __init__(self, rag: RagService | None = None) -> None:
+        self.rag = rag or RagService.from_directory(settings.data_dir)
+
+    def handle(self, request: ChatRequest) -> dict:
         question = request.message.casefold()
         if any(term in question for term in ("aluguel", "mensalidade", "monthly fee", "rental")):
             return {
@@ -33,7 +36,12 @@ class KnowledgeAgent:
             }
         hits = self.rag.search(request.message, limit=3)
         if not hits or hits[0].score <= 0:
-            return {"agent": "knowledge", "answer": "Não encontrei essa informação na base da InfinitePay.", "sources": [], "needs_human": False}
+            return {
+                "agent": "knowledge",
+                "answer": "Não encontrei essa informação na base da InfinitePay.",
+                "sources": [],
+                "needs_human": False,
+            }
         best = hits[0]
         return {
             "agent": "knowledge",
