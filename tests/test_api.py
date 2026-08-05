@@ -32,3 +32,9 @@ def test_account_question_uses_support():
 
 def test_validation():
     assert client.post("/chat", json={"message": "", "user_id": "x"}).status_code == 422
+
+def test_greeting_uses_conversation_agent():
+    body = ask("Bom dia!").json()
+    assert body["agent"] == "conversation"
+    assert body["answer"].startswith("Bom dia!")
+    assert body["sources"] == []
