@@ -1,0 +1,3 @@
+Produto: Conta Digital
+
+A Conta Digital da InfinitePay permite receber pagamentos, usar cartão, realizar transferências e acompanhar a gestão financeira.

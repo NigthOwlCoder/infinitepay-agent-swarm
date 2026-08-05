@@ -1,0 +1,5 @@
+Produto: Maquininha Smart
+
+A Maquininha Smart é uma solução de pagamento da InfinitePay. Ela aceita pagamentos no débito, crédito e Pix, permite parcelamento em até 12 vezes e possui impressão de comprovante.
+
+Ela oferece gestão de vendas e estoque. Preço, taxas e condições comerciais podem variar conforme o perfil do cliente e a oferta vigente no site oficial da InfinitePay.
