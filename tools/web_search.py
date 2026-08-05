@@ -69,7 +69,7 @@ class WebSearchTool:
         for topic in payload.get("RelatedTopics", []):
             if isinstance(topic, dict) and topic.get("Text") and topic.get("FirstURL"):
                 return WebResult(answer=topic["Text"], source=topic["FirstURL"])
-        return self._search_html(query)
+        return self._search_html(query) or self._search_wikipedia(query)
 
     def _search_html(self, query: str) -> WebResult | None:
         try:
@@ -92,6 +92,40 @@ class WebSearchTool:
         if not text or not source:
             return None
         return WebResult(answer=f"{title}: {text}" if title else text, source=source)
+
+    def _search_wikipedia(self, query: str) -> WebResult | None:
+        params = {
+            "action": "query",
+            "generator": "search",
+            "gsrsearch": query,
+            "gsrlimit": "1",
+            "prop": "extracts|info",
+            "exintro": "1",
+            "explaintext": "1",
+            "inprop": "url",
+            "format": "json",
+        }
+        try:
+            response = httpx.get(
+                "https://pt.wikipedia.org/w/api.php",
+                params=params,
+                headers={"User-Agent": "AgentSwarm/1.1 educational challenge"},
+                timeout=8.0,
+            )
+            response.raise_for_status()
+            pages = response.json().get("query", {}).get("pages", {})
+        except (httpx.HTTPError, ValueError):
+            return None
+
+        if not pages:
+            return None
+        page = next(iter(pages.values()))
+        extract = (page.get("extract") or "").strip()
+        source = page.get("fullurl")
+        if not extract or not source:
+            return None
+        summary = extract[:700].rsplit(" ", 1)[0]
+        return WebResult(answer=summary, source=source)
 
     @staticmethod
     def _direct_url(url: str) -> str:
