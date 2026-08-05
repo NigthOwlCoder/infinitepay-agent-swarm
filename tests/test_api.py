@@ -26,6 +26,12 @@ def test_machine_has_no_rent_or_monthly_fee():
 def test_current_question_uses_search():
     assert ask("Quando foi o último jogo do Palmeiras?").json()["agent"] == "web_search"
 
+def test_today_question_returns_server_date():
+    body = ask("Que dia é hoje?").json()
+    assert body["agent"] == "web_search"
+    assert body["answer"].startswith("Hoje é")
+    assert "America/Sao_Paulo" in body["sources"][0]
+
 def test_account_question_uses_support():
     body = ask("Why am I not able to make transfers?").json()
     assert body["agent"] == "customer_support" and "customer_account" in body["sources"]
