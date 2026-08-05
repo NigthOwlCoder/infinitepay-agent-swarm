@@ -36,7 +36,8 @@ class RouterAgent:
     )
     SUPPORT = re.compile(
         r"\b(minha|meu|não consigo|nao consigo|entrar|login|sign in|"
-        r"transfer\w*|saldo|bloquead\w*|suporte)\b",
+        r"transfer\w*|saldo|bloquead\w*|suporte|"
+        r"(?:pedir|solicitar|receber|quero)\s+(?:um\s+)?pix)\b",
         re.IGNORECASE,
     )
 

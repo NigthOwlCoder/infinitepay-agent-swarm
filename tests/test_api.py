@@ -79,6 +79,14 @@ def test_account_question_uses_support():
     body = ask("Why am I not able to make transfers?").json()
     assert body["agent"] == "customer_support" and "customer_account" in body["sources"]
 
+
+def test_requesting_pix_uses_account_context_and_explains_product():
+    body = ask("Quero pedir um Pix").json()
+    assert body["agent"] == "customer_support"
+    assert "solicitar pagamentos na área logada" in body["answer"]
+    assert "parcelas a receber" in body["answer"]
+    assert "forma instantânea" in body["answer"]
+
 def test_validation():
     response = client.post("/chat", json={"message": "", "user_id": "x"})
     assert response.status_code == 422

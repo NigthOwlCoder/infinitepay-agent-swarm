@@ -17,6 +17,15 @@ class CustomerSupportAgent:
                 "Verifique saldo, destinatário e limites. "
                 f"Status: {status['status']}; último evento: {activity[0]['description']}."
             )
+        elif "pix" in message and any(
+            term in message for term in ("pedir", "solicitar", "receber", "quero")
+        ):
+            answer = (
+                "Você pode solicitar pagamentos na área logada se tiver parcelas a receber. "
+                "O Pix permite receber o pagamento de forma instantânea, 24 horas por dia. "
+                "A disponibilidade da solicitação depende das parcelas elegíveis exibidas "
+                "na sua conta."
+            )
         else:
             answer = (
                 f"Sua conta está com status '{status['status']}'. "
