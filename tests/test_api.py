@@ -2,6 +2,8 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from core.config import settings
+from model.chat_request import ChatRequest
+from tools.web_search import WebResult
 
 client = TestClient(app)
 
@@ -32,7 +34,40 @@ def test_machine_has_no_rent_or_monthly_fee():
     assert "mensalidade" in body["answer"]
 
 def test_current_question_uses_search():
-    assert ask("Quando foi o último jogo do Palmeiras?").json()["agent"] == "web_search"
+    from agents.router_agent import RouterAgent
+
+    decision = RouterAgent().decide("Quando foi o último jogo do Palmeiras?")
+    assert decision.agent == "web_search"
+
+
+def test_unseen_general_questions_route_to_web_without_keyword_rules():
+    from agents.router_agent import RouterAgent
+
+    router = RouterAgent()
+    questions = (
+        "Quem ganhou a Copa do Mundo?",
+        "Qual a previsão meteorológica para amanhã?",
+        "Quem venceu a partida?",
+        "Qual o valor do câmbio entre real e dólar?",
+    )
+    assert all(router.decide(question).agent == "web_search" for question in questions)
+
+
+def test_web_agent_returns_answer_and_source_from_tool():
+    from agents.web_search_agent import WebSearchAgent
+
+    class FakeSearchTool:
+        def search(self, query: str) -> WebResult:
+            return WebResult(
+                answer="Resposta verificada",
+                source="https://example.com/source",
+            )
+
+    agent = WebSearchAgent(search_tool=FakeSearchTool())
+    request = ChatRequest(message="Pergunta geral inédita", user_id="client789")
+    body = agent.handle(request)
+    assert body["answer"] == "Resposta verificada"
+    assert body["sources"] == ["https://example.com/source"]
 
 def test_today_question_returns_server_date():
     body = ask("Que dia é hoje?").json()

@@ -12,7 +12,12 @@ O `RouterAgent` coordena cinco agentes por chamadas diretas:
 4. `ConversationAgent`: trata saudações e feedback sem consultar o RAG.
 5. `UtilityAgent`: resolve aritmética com uma árvore sintática segura, sem executar código arbitrário.
 
-Fluxo: `POST /chat -> RouterAgent -> agente especialista -> JSON`. A decisão e a justificativa são incluídas para observabilidade. As políticas são explícitas e testáveis: conhecimento só usa contexto recuperado, busca não fabrica fatos atuais e suporte não expõe segredos.
+Fluxo: `POST /chat -> RouterAgent -> agente especialista -> JSON`. A decisão e a justificativa são
+incluídas para observabilidade. Depois de tratar saudações, suporte e cálculos, o Router consulta a
+capacidade do RAG: perguntas fundamentáveis na base seguem para Knowledge; qualquer pergunta fora
+do corpus segue automaticamente para Web Search. Assim, temas gerais inéditos não dependem de uma
+lista de palavras cadastradas. As políticas são explícitas e testáveis: conhecimento só usa contexto
+recuperado, busca não fabrica fatos atuais e suporte não expõe segredos.
 
 ## RAG
 

@@ -5,6 +5,7 @@ from urllib.parse import quote_plus
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from model.chat_request import ChatRequest
+from tools.web_search import WebSearchTool
 
 
 class WebSearchAgent:
@@ -13,6 +14,9 @@ class WebSearchAgent:
     DATE_PATTERN = re.compile(
         r"(que|qual)\s+(dia|data).*hoje|dia de hoje|today'?s? date|what day is it"
     )
+
+    def __init__(self, search_tool: WebSearchTool | None = None) -> None:
+        self.search_tool = search_tool or WebSearchTool()
 
     def handle(self, request: ChatRequest) -> dict:
         question = request.message.casefold()
@@ -40,11 +44,23 @@ class WebSearchAgent:
                 "sources": ["Relógio do servidor · fuso America/Sao_Paulo"],
                 "needs_human": False,
             }
+        result = self.search_tool.search(request.message)
+        if result:
+            return {
+                "agent": "web_search",
+                "answer": result.answer,
+                "sources": [result.source],
+                "needs_human": False,
+            }
+
         search_url = os.getenv("WEB_SEARCH_URL", "https://duckduckgo.com/?q=")
         url = search_url + quote_plus(request.message)
         return {
             "agent": "web_search",
-            "answer": "Essa pergunta exige informação atual. Consulte a busca indicada.",
+            "answer": (
+                "Não encontrei uma resposta verificável agora. "
+                "Deixei uma busca pronta para consulta."
+            ),
             "sources": [url],
             "needs_human": False,
         }

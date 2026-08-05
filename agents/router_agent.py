@@ -39,11 +39,6 @@ class RouterAgent:
         r"transfer\w*|saldo|bloquead\w*|suporte)\b",
         re.IGNORECASE,
     )
-    GENERAL = re.compile(
-        r"\b(not[ií]cia|hoje|ontem|último|ultimo|palmeiras|clima|tempo|"
-        r"presidente|cotação)\b",
-        re.IGNORECASE,
-    )
 
     def __init__(self, agents: dict[str, Agent] | None = None) -> None:
         self.agents = agents or {
@@ -60,12 +55,14 @@ class RouterAgent:
             (self.NEGATIVE_FEEDBACK, "conversation", "negative feedback or insult"),
             (self.MATH, "utility", "deterministic arithmetic expression"),
             (self.SUPPORT, "customer_support", "request needs user/account context"),
-            (self.GENERAL, "web_search", "time-sensitive or general-purpose question"),
         )
         for pattern, agent, reason in rules:
             if pattern.search(message):
                 return RouteDecision(agent, reason)
-        return RouteDecision("knowledge", "InfinitePay product question")
+        knowledge = self.agents["knowledge"]
+        if isinstance(knowledge, KnowledgeAgent) and knowledge.can_answer(message):
+            return RouteDecision("knowledge", "answer is grounded in InfinitePay corpus")
+        return RouteDecision("web_search", "question falls outside the product corpus")
 
     def route(self, request: ChatRequest) -> dict:
         decision = self.decide(request.message)

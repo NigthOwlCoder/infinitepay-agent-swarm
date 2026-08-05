@@ -5,6 +5,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 TOKEN = re.compile(r"[a-záàâãéêíóôõúç0-9]+", re.I)
+STOPWORDS = {
+    "a", "as", "ao", "com", "como", "da", "das", "de", "do", "dos", "e",
+    "dia", "em", "eu", "é", "foi", "hoje", "o", "os", "para", "por", "qual", "que",
+    "quem", "se",
+    "um", "uma", "the", "is", "of", "to", "what", "who",
+}
 SYNONYMS: dict[str, tuple[str, ...]] = {
     "fees": ("taxas", "tarifas"),
     "fee": ("taxa", "tarifa"),
@@ -23,7 +29,7 @@ SYNONYMS: dict[str, tuple[str, ...]] = {
 
 
 def tokenize(text: str) -> list[str]:
-    tokens = TOKEN.findall(text.casefold())
+    tokens = [token for token in TOKEN.findall(text.casefold()) if token not in STOPWORDS]
     return tokens + [word for token in tokens for word in SYNONYMS.get(token, ())]
 
 @dataclass(frozen=True)

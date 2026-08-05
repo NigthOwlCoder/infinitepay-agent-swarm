@@ -49,3 +49,12 @@ class KnowledgeAgent:
             "sources": [best.source],
             "needs_human": False,
         }
+
+    def can_answer(self, question: str) -> bool:
+        """Return whether the approved product corpus can ground this question."""
+        normalized = question.casefold()
+        explicit_intents = ("aluguel", "mensalidade", "taxa", "tarifa", "fee", "rate")
+        if any(term in normalized for term in explicit_intents):
+            return True
+        hits = self.rag.search(question, limit=1)
+        return bool(hits and hits[0].score >= 1.0)
