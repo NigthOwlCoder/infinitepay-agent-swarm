@@ -5,7 +5,18 @@ from dataclasses import dataclass
 from pathlib import Path
 
 TOKEN = re.compile(r"[a-záàâãéêíóôõúç0-9]+", re.I)
-def tokenize(text): return TOKEN.findall(text.casefold())
+SYNONYMS = {
+    "fees": ("taxas", "tarifas"), "fee": ("taxa", "tarifa"),
+    "rates": ("taxas", "tarifas"), "rate": ("taxa", "tarifa"),
+    "cost": ("preço", "custo"), "price": ("preço", "custo"),
+    "debit": ("débito",), "credit": ("crédito",), "card": ("cartão",),
+    "phone": ("celular", "infinitetap"), "machine": ("maquininha",),
+    "account": ("conta",), "transfers": ("transferências",),
+}
+
+def tokenize(text):
+    tokens = TOKEN.findall(text.casefold())
+    return tokens + [word for token in tokens for word in SYNONYMS.get(token, ())]
 
 @dataclass(frozen=True)
 class SearchHit:

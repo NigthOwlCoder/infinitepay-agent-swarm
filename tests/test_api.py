@@ -8,6 +8,16 @@ def test_product_question_uses_knowledge():
     body = ask("What is the cost of the Maquininha Smart?").json()
     assert body["agent"] == "knowledge" and body["sources"]
 
+def test_fee_question_returns_specific_example():
+    body = ask("Pode me dar um exemplo de tarifa no débito e crédito?").json()
+    assert "1,37%" in body["answer"]
+    assert "3,15%" in body["answer"]
+    assert body["sources"] == ["https://www.infinitepay.io/taxas"]
+
+def test_english_fee_question_is_understood():
+    body = ask("What are the fees for debit and credit card transactions?").json()
+    assert "Pix grátis" in body["answer"]
+
 def test_current_question_uses_search():
     assert ask("Quando foi o último jogo do Palmeiras?").json()["agent"] == "web_search"
 
