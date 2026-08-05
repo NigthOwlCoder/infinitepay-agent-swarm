@@ -20,6 +20,13 @@ Na inicialização, os `.txt` de `data/` são divididos em parágrafos, tokeniza
 
 Em produção, um job deve baixar e limpar as páginas indicadas no desafio (`infinitepay.io`, `/maquininha`, `/maquininha-celular`, `/tap-to-pay`, `/pdv`, `/receba-na-hora`, `/gestao-de-cobranca-2`, `/link-de-pagamento`, `/loja-online`, `/boleto`, `/conta-digital`, `/pix`, `/emprestimo`, `/cartao` e `/rendimento`), versionar os documentos e reconstruir o índice. Essa separação torna testes independentes da rede e permite revisão editorial.
 
+## Prompts e políticas dos agentes
+
+Os prompts de produção estão versionados em `prompts/`. Cada um declara papel, escopo, ferramentas,
+regras de grounding e segurança, condições de escalonamento e contrato de saída. A implementação
+demonstrativa aplica essas políticas de forma determinística, tornando o roteamento e os testes
+reprodutíveis; os mesmos prompts podem ser conectados a um LLM sem alterar o contrato HTTP.
+
 ## Executar
 
 Requer Python 3.12+.

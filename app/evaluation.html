@@ -18,6 +18,7 @@
     <div class="criterion"><strong>Well structured</strong><span>API, agentes, modelos, serviços, ferramentas, dados e testes separados por responsabilidade.</span><span class="status">Evidenciado</span></div>
     <div class="criterion"><strong>Modular</strong><span>Contrato <code>Agent</code> e injeção no Router permitem substituir especialistas isoladamente.</span><span class="status">Evidenciado</span></div>
     <div class="criterion"><strong>Maintainable</strong><span>Configuração central, tipagem, testes de regressão, Docker e documentação versionada.</span><span class="status">Evidenciado</span></div>
+    <div class="criterion"><strong>High-quality prompts</strong><span>Papel, escopo, ferramentas, grounding, segurança, escalonamento e saída definidos por agente.</span><span class="status">Evidenciado</span></div>
   </div></section>
 
   <section><h2>Evidências no repositório</h2><div class="grid">
@@ -25,6 +26,7 @@
     <article class="card"><h3>RAG isolado</h3><p>Indexação, tokenização e ranking BM25 vivem em um serviço testável e independente.</p><a href="https://github.com/NigthOwlCoder/infinitepay-agent-swarm/blob/main/services/rag.py" target="_blank">Ver serviço RAG ↗</a></article>
     <article class="card"><h3>Testes de comportamento</h3><p>Cobrem roteamento, tarifas, saudações, data, suporte e validação do contrato HTTP.</p><a href="https://github.com/NigthOwlCoder/infinitepay-agent-swarm/blob/main/tests/test_api.py" target="_blank">Ver testes ↗</a></article>
     <article class="card"><h3>Qualidade automatizada</h3><p>Ruff e Pytest têm regras versionadas no projeto; o ambiente é reproduzível via Docker.</p><a href="https://github.com/NigthOwlCoder/infinitepay-agent-swarm/blob/main/pyproject.toml" target="_blank">Ver configuração ↗</a></article>
+    <article class="card"><h3>Prompts de alta qualidade</h3><p>Políticas versionadas descrevem capacidades, limites, ferramentas, grounding e formato de resposta.</p><a href="https://github.com/NigthOwlCoder/infinitepay-agent-swarm/tree/main/prompts" target="_blank">Inspecionar prompts ↗</a></article>
   </div></section>
 
   <section><h2>Transparência: limites atuais</h2><div class="limits"><ul><li>A base RAG demonstrativa contém um subconjunto curado das páginas solicitadas.</li><li>A busca geral preserva a fonte, mas ainda não resume resultados de um provedor externo.</li><li>As ferramentas de conta são mocks atrás de fronteiras substituíveis.</li><li><code>needs_human</code> sinaliza escalonamento, mas ainda não cria um ticket real.</li></ul></div></section>

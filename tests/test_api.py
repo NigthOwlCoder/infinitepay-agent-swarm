@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from core.config import settings
 
 client = TestClient(app)
 
@@ -81,3 +82,12 @@ def test_public_pages_are_available():
 def test_health_exposes_version():
     body = client.get("/health").json()
     assert body == {"status": "ok", "version": "1.1.0"}
+
+
+def test_agent_prompts_define_capabilities_and_output_contracts():
+    for name in ("router", "knowledge", "web_search", "customer_support"):
+        prompt = (settings.project_root / "prompts" / f"{name}.md").read_text(
+            encoding="utf-8"
+        )
+        assert "## Role" in prompt
+        assert "## Output" in prompt
