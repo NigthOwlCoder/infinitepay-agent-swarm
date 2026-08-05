@@ -42,5 +42,6 @@ def test_validation():
 def test_greeting_uses_conversation_agent():
     body = ask("Bom dia!").json()
     assert body["agent"] == "conversation"
-    assert body["answer"] == "Bom dia! Posso te ajudar?"
+    assert body["answer"].startswith("Bom dia! Posso te ajudar?")
+    assert "Maquininha Smart" in body["answer"]
     assert body["sources"] == []
