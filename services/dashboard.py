@@ -54,21 +54,35 @@ CASES = [
         "merchant": "cliente1988", "reason": "Transação recusada após duas tentativas",
         "summary": "Lojista informa recusa; terminal está online e sem erro técnico.",
         "history": ["Cliente: Minha venda foi recusada duas vezes.", "Support Agent: Terminal online; evitar nova cobrança duplicada."],
-        "suggested_response": "Olá! Sua maquininha está online. Oriente o cliente a confirmar a compra com o banco emissor ou tentar outra forma de pagamento. Antes de repetir, confirme no histórico se nenhuma tentativa foi aprovada, evitando cobrança duplicada.",
+        "suggested_response": (
+            "Olá! Verifiquei que sua maquininha está online. Como a venda foi recusada, "
+            "peça ao titular do cartão para confirmar a compra com o banco emissor ou tente "
+            "outra forma de pagamento. Antes de tentar novamente, confira no histórico da "
+            "maquininha se alguma tentativa foi aprovada, evitando uma cobrança duplicada. "
+            "Se precisar, continuo por aqui."
+        ),
     },
     {
         "id": "GET-1041", "priority": "Média", "status": "Em análise", "waiting": "18 min",
         "merchant": "lojista442", "reason": "Dúvida sobre prazo de liquidação",
         "summary": "Venda no crédito realizada ontem; modalidade exata não foi identificada.",
         "history": ["Cliente: Quando vou receber a venda de ontem?", "Support Agent: Prazo depende da modalidade contratada."],
-        "suggested_response": "Olá! O prazo depende da modalidade escolhida. A oferta atual informa 2 dias úteis. Confirme a previsão exata no app Getnet Brasil ou no Portal Minha Conta.",
+        "suggested_response": (
+            "Olá! O prazo de recebimento depende da modalidade contratada para a venda. A "
+            "oferta atual informa recebimento em 2 dias úteis. Você pode consultar a data "
+            "exata no app Getnet Brasil ou no Portal Minha Conta."
+        ),
     },
     {
         "id": "GET-1039", "priority": "Baixa", "status": "Aguardando cliente", "waiting": "31 min",
         "merchant": "comercio77", "reason": "Maquininha sem conexão",
         "summary": "Cliente ainda não informou se usa Wi-Fi ou chip.",
         "history": ["Cliente: A máquina não conecta.", "Support Agent: Solicitada informação da rede."],
-        "suggested_response": "Olá! Confirme se a maquininha usa Wi-Fi ou chip de dados. Enquanto isso, reinicie o equipamento e teste outra rede disponível.",
+        "suggested_response": (
+            "Olá! Sua maquininha está usando Wi-Fi ou o chip de dados? Enquanto você "
+            "confirma, reinicie o equipamento e tente conectá-lo a outra rede disponível. "
+            "Depois me conte se a conexão voltou."
+        ),
     },
 ]
 
