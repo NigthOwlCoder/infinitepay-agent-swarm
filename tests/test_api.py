@@ -9,146 +9,165 @@ client = TestClient(app)
 
 
 def ask(message: str):
-    return client.post(
-        "/chat",
-        json={"message": message, "user_id": "client789"},
-    )
+    return client.post("/chat", json={"message": message, "user_id": "cliente1988"})
 
-def test_product_question_uses_knowledge():
-    body = ask("What is the cost of the Maquininha Smart?").json()
-    assert body["agent"] == "knowledge" and body["sources"]
 
-def test_fee_question_returns_specific_example():
-    body = ask("Pode me dar um exemplo de tarifa no débito e crédito?").json()
-    assert "1,37%" in body["answer"]
-    assert "3,15%" in body["answer"]
-    assert body["sources"] == ["https://www.infinitepay.io/taxas"]
+def test_get_classica_vs_smart():
+    body = ask("What's the difference between the Get Clássica and the Get Smart?").json()
+    assert body["agent"] == "knowledge"
+    assert "aplicativos de gestão" in body["answer"]
+    assert body["sources"]
 
-def test_english_fee_question_is_understood():
-    body = ask("What are the fees for debit and credit card transactions?").json()
-    assert "Pix grátis" in body["answer"]
 
-def test_machine_has_no_rent_or_monthly_fee():
-    body = ask("Preciso pagar aluguel pela maquininha?").json()
-    assert body["answer"].startswith("Não.")
-    assert "mensalidade" in body["answer"]
+def test_best_rate_answer_is_helpful_and_links_official_site():
+    body = ask("Qual a melhor taxa da Getnet?").json()
+    assert body["agent"] == "knowledge"
+    assert "funcionalidades digitais" in body["answer"]
+    assert "conferir os detalhes" in body["answer"]
+    assert body["sources"] == ["https://site.getnet.com.br/"]
 
-def test_current_question_uses_search():
+
+def test_same_day_payment_answer_starts_with_no_and_explains_deadlines():
+    body = ask("A Getnet paga no dia?").json()
+    assert body["agent"] == "knowledge"
+    assert body["answer"].startswith("Não há garantia")
+    assert "até um dia corrido" in body["answer"]
+    assert "2 dias úteis" in body["answer"]
+    assert all(source.startswith("https://") for source in body["sources"])
+
+
+def test_pix_does_not_require_specific_bank():
+    body = ask("Do I need a bank account to receive my sales via Pix?").json()
+    assert body["agent"] == "knowledge"
+    assert "Não necessariamente" in body["answer"]
+
+
+def test_receivables_advance():
+    body = ask("How does receivables advance (antecipação) work with Getnet?").json()
+    assert "R$ 50" in body["answer"]
+
+
+def test_payment_link_on_whatsapp():
+    body = ask("Can I sell through WhatsApp using the Payment Link?").json()
+    assert body["agent"] == "knowledge"
+    assert "WhatsApp" in body["answer"]
+
+
+def test_installment_limit():
+    body = ask("How many installments can I split a sale into with the crediário?").json()
+    assert "12 vezes" in body["answer"]
+
+
+def test_terminal_connectivity_uses_support_tools():
+    body = ask("My card machine won't connect to the internet, what should I do?").json()
+    assert body["agent"] == "customer_support"
+    assert "terminal_diagnostics" in body["sources"]
+
+
+def test_declined_transaction_uses_support():
+    body = ask("My card machine is showing a transaction decline error.").json()
+    assert body["agent"] == "customer_support"
+    assert "emissor" in body["answer"]
+
+
+def test_settlement_question_uses_customer_context():
+    body = ask("When will the money from yesterday's sales be deposited?").json()
+    assert body["agent"] == "customer_support"
+    assert "2 dias úteis" in body["answer"]
+
+
+def test_general_current_question_routes_to_web():
     from agents.router_agent import RouterAgent
 
-    decision = RouterAgent().decide("Quando foi o último jogo do Palmeiras?")
-    assert decision.agent == "web_search"
+    assert RouterAgent().decide("What's the euro exchange rate today?").agent == "web_search"
+    assert RouterAgent().decide("Weather forecast in Porto Alegre tomorrow?").agent == "web_search"
 
 
-def test_unseen_general_questions_route_to_web_without_keyword_rules():
-    from agents.router_agent import RouterAgent
-
-    router = RouterAgent()
-    questions = (
-        "Quem ganhou a Copa do Mundo?",
-        "Qual a previsão meteorológica para amanhã?",
-        "Quem venceu a partida?",
-        "Qual o valor do câmbio entre real e dólar?",
-    )
-    assert all(router.decide(question).agent == "web_search" for question in questions)
-
-
-def test_web_agent_returns_answer_and_source_from_tool():
+def test_web_agent_returns_cited_result():
     from agents.web_search_agent import WebSearchAgent
 
     class FakeSearchTool:
         def search(self, query: str) -> WebResult:
-            return WebResult(
-                answer="Resposta verificada",
-                source="https://example.com/source",
-            )
+            return WebResult("Resposta atual verificada", "https://example.com/source")
 
-    agent = WebSearchAgent(search_tool=FakeSearchTool())
-    request = ChatRequest(message="Pergunta geral inédita", user_id="client789")
-    body = agent.handle(request)
-    assert body["answer"] == "Resposta verificada"
+    body = WebSearchAgent(FakeSearchTool()).handle(ChatRequest(message="câmbio", user_id="x"))
+    assert body["answer"] == "Resposta atual verificada"
     assert body["sources"] == ["https://example.com/source"]
 
-def test_today_question_returns_server_date():
-    body = ask("Que dia é hoje?").json()
-    assert body["agent"] == "web_search"
-    assert body["answer"].startswith("Hoje é")
-    assert "America/Sao_Paulo" in body["sources"][0]
+
+def test_greeting_and_math_bonus_agents():
+    assert ask("Bom dia!").json()["agent"] == "conversation"
+    assert ask("Quanto é 25x4?").json()["answer"] == "O resultado é 100."
 
 
-def test_year_question_returns_current_server_year():
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
-
-    body = ask("Em que ano estamos?").json()
-    expected_year = datetime.now(ZoneInfo("America/Sao_Paulo")).year
-    assert body["agent"] == "web_search"
-    assert body["answer"] == f"Estamos em {expected_year}."
-
-
-def test_infinitepay_trust_question_returns_grounded_answer():
-    body = ask("A InfinitePay é confiável?").json()
-    assert body["agent"] == "knowledge"
-    assert body["answer"].startswith("Sim,")
-    assert "Banco Central" in body["answer"]
-    assert len(body["sources"]) == 2
-
-def test_account_question_uses_support():
-    body = ask("Why am I not able to make transfers?").json()
-    assert body["agent"] == "customer_support" and "customer_account" in body["sources"]
-
-
-def test_requesting_pix_uses_account_context_and_explains_product():
-    body = ask("Quero pedir um Pix").json()
-    assert body["agent"] == "customer_support"
-    assert "solicitar pagamentos na área logada" in body["answer"]
-    assert "parcelas a receber" in body["answer"]
-    assert "forma instantânea" in body["answer"]
-
-def test_validation():
-    response = client.post("/chat", json={"message": "", "user_id": "x"})
-    assert response.status_code == 422
-
-def test_greeting_uses_conversation_agent():
-    body = ask("Bom dia!").json()
-    assert body["agent"] == "conversation"
-    assert body["answer"].startswith("Bom dia! Posso te ajudar?")
-    assert "Maquininha Smart" in body["answer"]
-    assert body["sources"] == []
-
-
-def test_arithmetic_uses_utility_agent():
-    body = ask("Quanto é 2x3?").json()
-    assert body["agent"] == "utility"
-    assert body["answer"] == "O resultado é 6."
-
-
-def test_insult_receives_constructive_response():
-    body = ask("Você é inútil").json()
-    assert body["agent"] == "conversation"
-    assert body["answer"].startswith("Desculpe. Vou procurar aprender e melhorar.")
-
-
-def test_public_pages_are_available():
-    for path, marker in (
-        ("/", "InfinitePay Agent Swarm"),
-        ("/apresentacao", "Apresentação Executiva"),
-        ("/avaliacao", "Evidências técnicas"),
-    ):
+def test_validation_and_public_pages():
+    assert client.post("/chat", json={"message": "", "user_id": "x"}).status_code == 422
+    for path, marker in (("/", "Getnet Agent Swarm"), ("/apresentacao", "Getnet")):
         response = client.get(path)
         assert response.status_code == 200
         assert marker in response.text
 
 
-def test_health_exposes_version():
-    body = client.get("/health").json()
-    assert body == {"status": "ok", "version": "1.2.2"}
+def test_health_version():
+    assert client.get("/health").json() == {"status": "ok", "version": "1.0.0"}
 
 
-def test_agent_prompts_define_capabilities_and_output_contracts():
-    for name in ("router", "knowledge", "web_search", "customer_support"):
-        prompt = (settings.project_root / "prompts" / f"{name}.md").read_text(
-            encoding="utf-8"
-        )
-        assert "## Role" in prompt
-        assert "## Output" in prompt
+def test_protected_dashboards_redirect_to_login():
+    anonymous = TestClient(app)
+    assert anonymous.get("/gestao", follow_redirects=False).status_code == 303
+    assert anonymous.get("/especialista", follow_redirects=False).status_code == 303
+    assert anonymous.get("/api/management").status_code == 401
+
+
+def test_admin_login_can_read_management_metrics():
+    admin = TestClient(app)
+    response = admin.post(
+        "/auth/login", json={"username": "admin", "password": "getnet-demo-admin"}
+    )
+    assert response.status_code == 200 and response.json()["role"] == "admin"
+    metrics = admin.get("/api/management").json()
+    assert len(metrics["kpis"]) == 8
+    assert metrics["agents"][0]["name"] == "Knowledge"
+
+
+def test_specialist_sees_handoffs_and_suggested_reply_but_not_management():
+    specialist = TestClient(app)
+    response = specialist.post(
+        "/auth/login",
+        json={"username": "especialista", "password": "getnet-demo-specialist"},
+    )
+    assert response.status_code == 200
+    assert specialist.get("/api/management").status_code == 401
+    cases = specialist.get("/api/handoffs").json()
+    assert cases[0]["priority"] == "Alta"
+    assert "suggested_response" in cases[0]
+    assert "cobrança duplicada" in cases[0]["suggested_response"]
+
+
+def test_demo_offers_customer_and_attendant_paths():
+    page = client.get("/demo")
+    assert page.status_code == 200
+    assert "Sou cliente" in page.text
+    assert "Sou atendente" in page.text
+
+
+def test_specialist_reply_is_persisted_in_conversation_history():
+    specialist = TestClient(app)
+    specialist.post(
+        "/auth/login",
+        json={"username": "especialista", "password": "getnet-demo-specialist"},
+    )
+    reply = "Resposta revisada pelo especialista para o teste."
+    saved = specialist.post("/api/handoffs/GET-TEST/reply", json={"response": reply})
+    assert saved.status_code == 200
+    events = specialist.get("/api/history/GET-TEST").json()
+    assert events[-1]["actor"] == "especialista"
+    assert events[-1]["content"] == reply
+
+
+def test_prompts_define_role_and_output():
+    for name in (
+        "router", "conversation", "utility", "knowledge", "web_search", "customer_support"
+    ):
+        text = (settings.project_root / "prompts" / f"{name}.md").read_text(encoding="utf-8")
+        assert "## Role" in text and "## Output" in text

@@ -21,10 +21,14 @@ SYNONYMS: dict[str, tuple[str, ...]] = {
     "debit": ("débito",),
     "credit": ("crédito",),
     "card": ("cartão",),
-    "phone": ("celular", "infinitetap"),
+    "phone": ("celular", "get tap"),
     "machine": ("maquininha",),
     "account": ("conta",),
     "transfers": ("transferências",),
+    "classic": ("clássica",),
+    "smart": ("smart",),
+    "receivables": ("recebíveis", "antecipação"),
+    "installments": ("parcelas", "crediário"),
 }
 
 

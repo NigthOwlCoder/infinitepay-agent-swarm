@@ -1,9 +1,0 @@
-Produto: Maquininha Smart
-
-A Maquininha Smart é uma solução de pagamento da InfinitePay. Ela aceita pagamentos no débito, crédito e Pix, permite parcelamento em até 12 vezes e possui impressão de comprovante.
-
-Ela oferece gestão de vendas e estoque. Preço, taxas e condições comerciais podem variar conforme o perfil do cliente e a oferta vigente no site oficial da InfinitePay.
-
-Exemplo de taxas para Maquininha e InfiniteTap no plano inicial, recebendo em 1 dia útil: Pix grátis, débito 1,37%, crédito à vista 3,15% e crédito em 12 vezes 12,40%. Para faturamento acima de R$ 80 mil por mês: Pix grátis, débito a partir de 0,75%, crédito à vista 2,69% e 12 vezes 8,99%. As taxas variam conforme faturamento, bandeira, plano e prazo de recebimento. Fonte oficial: https://www.infinitepay.io/taxas (consultada em 5 de agosto de 2026).
-
-InfiniteTap transforma um celular compatível com NFC em maquininha, aceitando débito, crédito à vista ou parcelado. Requer Android 11 ou superior, ou iOS 16.7 ou superior, além de cadastro aprovado e validação de identidade no app InfinitePay.

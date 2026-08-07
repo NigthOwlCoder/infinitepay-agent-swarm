@@ -28,8 +28,8 @@ class ConversationAgent:
         return {
             "agent": "conversation",
             "answer": (
-                f"{greeting} Posso te ajudar? Você pode me perguntar sobre a Maquininha "
-                "Smart, taxas, Pix, InfiniteTap ou suporte à sua conta."
+                f"{greeting} Posso te ajudar? Você pode perguntar sobre Get Clássica, "
+                "Get Smart, Pix, Link de Pagamento ou suporte à maquininha."
             ),
             "sources": [],
             "needs_human": False,

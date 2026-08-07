@@ -35,9 +35,8 @@ class RouterAgent:
         re.IGNORECASE,
     )
     SUPPORT = re.compile(
-        r"\b(minha|meu|não consigo|nao consigo|entrar|login|sign in|"
-        r"transfer\w*|saldo|bloquead\w*|suporte|"
-        r"(?:pedir|solicitar|receber|quero)\s+(?:um\s+)?pix)\b",
+        r"\b(minha|meu|não consigo|nao consigo|suporte|internet|conectar|connect|"
+        r"recusad\w*|negad\w*|decline\w*|deposit\w*|venda de ontem)\b",
         re.IGNORECASE,
     )
 
@@ -62,7 +61,7 @@ class RouterAgent:
                 return RouteDecision(agent, reason)
         knowledge = self.agents["knowledge"]
         if isinstance(knowledge, KnowledgeAgent) and knowledge.can_answer(message):
-            return RouteDecision("knowledge", "answer is grounded in InfinitePay corpus")
+            return RouteDecision("knowledge", "answer is grounded in Getnet corpus")
         return RouteDecision("web_search", "question falls outside the product corpus")
 
     def route(self, request: ChatRequest) -> dict:

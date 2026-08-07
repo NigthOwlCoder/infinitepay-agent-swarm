@@ -1,42 +1,48 @@
 from model.chat_request import ChatRequest
-from tools.customer_tools import get_account_status, get_recent_activity
+from tools.customer_tools import (
+    get_merchant_status,
+    get_recent_settlements,
+    get_terminal_diagnostics,
+)
 
 
 class CustomerSupportAgent:
+    """Resolve merchant-specific issues using minimal, mock account context."""
+
     def handle(self, request: ChatRequest) -> dict:
-        status = get_account_status(request.user_id)
-        activity = get_recent_activity(request.user_id)
+        status = get_merchant_status(request.user_id)
+        settlements = get_recent_settlements(request.user_id)
+        diagnostics = get_terminal_diagnostics(request.user_id)
         message = request.message.casefold()
-        if any(term in message for term in ("entrar", "login", "sign in")):
+
+        if any(term in message for term in ("internet", "conectar", "connect")):
             answer = (
-                "Confirme e-mail/telefone, redefina a senha e atualize o app. "
-                "Nunca compartilhe senha ou código de verificação."
+                "Reinicie a maquininha, confirme se o Wi-Fi ou chip está ativo e teste "
+                "outra rede. Se continuar offline, solicite diagnóstico pelo suporte Getnet."
             )
-        elif "transfer" in message:
+        elif any(term in message for term in ("recusada", "recusado", "decline", "negada")):
             answer = (
-                "Verifique saldo, destinatário e limites. "
-                f"Status: {status['status']}; último evento: {activity[0]['description']}."
+                "Confirme a forma de pagamento, não repita cobranças já aprovadas e peça ao "
+                "cliente para consultar o emissor. O terminal está registrado como "
+                f"'{status['terminal_status']}'."
             )
-        elif "pix" in message and any(
-            term in message for term in ("pedir", "solicitar", "receber", "quero")
-        ):
+        elif any(term in message for term in ("deposit", "depositado", "venda de ontem")):
             answer = (
-                "Você pode solicitar pagamentos na área logada se tiver parcelas a receber. "
-                "O Pix permite receber o pagamento de forma instantânea, 24 horas por dia. "
-                "A disponibilidade da solicitação depende das parcelas elegíveis exibidas "
-                "na sua conta."
+                f"A previsão simulada é {settlements[0]['expected_in']}. O prazo real depende "
+                "da modalidade contratada e deve ser confirmado no app ou Portal Minha Conta."
             )
         else:
             answer = (
-                f"Sua conta está com status '{status['status']}'. "
-                "Posso ajudar com acesso ou transferências."
+                f"Seu cadastro está com status '{status['status']}'. Posso ajudar com "
+                "conectividade, transações recusadas ou previsão de recebimento."
             )
-        needs_human = status["status"] != "active"
+
+        needs_human = status["status"] != "active" or diagnostics["last_error"] != "none"
         if needs_human:
             answer += " Encaminhei o caso para atendimento humano."
         return {
             "agent": "customer_support",
             "answer": answer,
-            "sources": ["customer_account", "recent_activity"],
+            "sources": ["merchant_status", "recent_settlements", "terminal_diagnostics"],
             "needs_human": needs_human,
         }

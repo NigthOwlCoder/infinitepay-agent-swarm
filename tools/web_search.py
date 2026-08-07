@@ -1,10 +1,14 @@
 import base64
+import logging
+import os
 import re
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, quote_plus, unquote, urlparse
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -44,11 +48,61 @@ class _DuckDuckGoParser(HTMLParser):
 
 
 class WebSearchTool:
-    """Search DuckDuckGo's public instant-answer index with a bounded timeout."""
+    """Search the web, preferring OpenAI web search when it is configured."""
 
     endpoint = "https://api.duckduckgo.com/"
 
     def search(self, query: str) -> WebResult | None:
+        if api_key := os.getenv("OPENAI_API_KEY"):
+            result = self._search_openai(query, api_key)
+            if result:
+                return result
+
+        # Keyless providers keep demos working but may be blocked by hosting services.
+        return self._search_public(query)
+
+    def _search_openai(self, query: str, api_key: str) -> WebResult | None:
+        try:
+            response = httpx.post(
+                "https://api.openai.com/v1/responses",
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={
+                    "model": os.getenv("OPENAI_WEB_SEARCH_MODEL", "gpt-4.1-mini"),
+                    "tools": [{"type": "web_search_preview"}],
+                    "input": (
+                        "Responda em português do Brasil, de forma direta e factual. "
+                        "Pesquise na web antes de responder e priorize fontes confiáveis. "
+                        f"Pergunta: {query}"
+                    ),
+                },
+                timeout=25.0,
+            )
+            response.raise_for_status()
+            payload = response.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            logger.warning("OpenAI web search failed: %s", exc)
+            return None
+
+        texts: list[str] = []
+        sources: list[str] = []
+        for item in payload.get("output", []):
+            for content in item.get("content", []):
+                if content.get("type") != "output_text":
+                    continue
+                if answer_text := content.get("text"):
+                    texts.append(answer_text.strip())
+                for annotation in content.get("annotations", []):
+                    if url := annotation.get("url"):
+                        sources.append(url)
+
+        answer = "\n".join(text for text in texts if text)
+        source = next(iter(dict.fromkeys(sources)), "")
+        if not answer or not source:
+            logger.warning("OpenAI web search returned no citable answer")
+            return None
+        return WebResult(answer=answer, source=source)
+
+    def _search_public(self, query: str) -> WebResult | None:
         params = {
             "q": query,
             "format": "json",
@@ -60,17 +114,17 @@ class WebSearchTool:
             response = httpx.get(self.endpoint, params=params, timeout=8.0)
             response.raise_for_status()
             payload = response.json()
-        except (httpx.HTTPError, ValueError):
-            return None
+        except (httpx.HTTPError, ValueError) as exc:
+            logger.info("DuckDuckGo instant answer failed: %s", exc)
+        else:
+            answer = payload.get("Answer") or payload.get("AbstractText")
+            source = payload.get("AbstractURL")
+            if answer and source:
+                return WebResult(answer=answer, source=source)
 
-        answer = payload.get("Answer") or payload.get("AbstractText")
-        source = payload.get("AbstractURL")
-        if answer and source:
-            return WebResult(answer=answer, source=source)
-
-        for topic in payload.get("RelatedTopics", []):
-            if isinstance(topic, dict) and topic.get("Text") and topic.get("FirstURL"):
-                return WebResult(answer=topic["Text"], source=topic["FirstURL"])
+            for topic in payload.get("RelatedTopics", []):
+                if isinstance(topic, dict) and topic.get("Text") and topic.get("FirstURL"):
+                    return WebResult(answer=topic["Text"], source=topic["FirstURL"])
         return (
             self._search_html(query)
             or self._search_wikipedia(query)
